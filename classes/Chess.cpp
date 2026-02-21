@@ -1,5 +1,6 @@
 #include "Chess.h"
 #include <limits>
+#include <cctype>
 #include <cmath>
 
 Chess::Chess()
@@ -52,15 +53,61 @@ void Chess::setUpBoard()
 }
 
 void Chess::FENtoBoard(const std::string& fen) {
-    // convert a FEN string to a board
-    // FEN is a space delimited string with 6 fields
-    // 1: piece placement (from white's perspective)
-    // NOT PART OF THIS ASSIGNMENT BUT OTHER THINGS THAT CAN BE IN A FEN STRING
-    // ARE BELOW
-    // 2: active color (W or B)
-    // 3: castling availability (KQkq or -)
-    // 4: en passant target square (in algebraic notation, or -)
-    // 5: halfmove clock (number of halfmoves since the last capture or pawn advance)
+    int rank = _grid->getHeight() - 1; // row/y
+    int file = 0; // col/x
+    for (char c : fen)
+    {
+        if (c == '/')
+        {
+            rank--;
+            file = 0;
+        }
+        else if (isdigit(c))
+        {
+            int digit = c - '0';
+            file += digit;
+        }
+        else // c is alphabetic
+        {
+            int playerNumber = isupper(c) ? 0 : 1;
+
+            ChessPiece piece;
+            switch(toupper(c))
+            {
+                case 'P':
+                    piece = Pawn;
+                    break;
+                case 'N':
+                    piece = Knight;
+                    break;
+                case 'B':
+                    piece = Bishop;
+                    break;
+                case 'R':
+                    piece = Rook;
+                    break;
+                case 'Q':
+                    piece = Queen;
+                    break;
+                case 'K':
+                    piece = King;
+                    break;
+            }
+
+            int gameTag = isupper(c)
+                ? piece
+                : piece + 128;
+
+            Bit *bit = PieceForPlayer(playerNumber, piece);
+            bit->setGameTag(gameTag);
+            ChessSquare *square = _grid->getSquare(file, rank);
+            bit->setParent(square);
+            bit->setPosition(square->getPosition());
+            square->setBit(bit);
+
+            file++;
+        }
+    }
 }
 
 bool Chess::actionForEmptyHolder(BitHolder &holder)
